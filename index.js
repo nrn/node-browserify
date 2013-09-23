@@ -209,7 +209,7 @@ Browserify.prototype.bundle = function (opts, cb) {
         })
         : through()
     ;
-    var p = self.pack(opts.debug, opts.standalone);
+    var p = self.pack(opts.debug, opts.standalone, opts.globalRequire, opts.prelude);
     if (cb) {
         p.on('error', cb);
         p.pipe(concatStream(function (src) { cb(null, src) }));
@@ -299,9 +299,11 @@ Browserify.prototype.deps = function (opts) {
     }
 };
 
-Browserify.prototype.pack = function (debug, standalone) {
+Browserify.prototype.pack = function (debug, standalone, globalRequire, prelude) {
     var self = this;
-    var packer = browserPack({ raw: true });
+    var packer = browserPack({ raw: true, prelude: prelude});
+
+    globalRequire = globalRequire || 'require'
     
     var mainModule;
     var hashes = {}, depList = {}, depHash = {};
@@ -395,7 +397,7 @@ Browserify.prototype.pack = function (debug, standalone) {
             return this.queue(umd.prelude(standalone) + 'return ');
         }
         if (!hasExports) return this.queue(';');
-        this.queue('require=');
+        this.queue(globalRequire + '=');
     }
     
     function hasher (row) {
